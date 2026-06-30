@@ -1,11 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --background: #06060c;
-  --foreground: #f3f4f6;
-  --accent-glow: radial-gradient(circle at top, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.04) 50%, transparent 100%);
+  --background: #131b2e; /* Modern Indigo-Slate Dark background */
+  --foreground: #f8fafc; /* Slate 50 */
+  --card-bg: rgba(30, 41, 59, 0.45); /* Slate 800 with opacity */
+  --card-border: rgba(255, 255, 255, 0.06);
+  --accent-glow: radial-gradient(circle at top, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.08) 50%, transparent 100%);
+  --text-muted: #94a3b8; /* Slate 400 */
+  --border-color: rgba(255, 255, 255, 0.08);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+[data-theme="light"] {
+  --background: #f1f5f9; /* Slate 100 */
+  --foreground: #0f172a; /* Slate 900 */
+  --card-bg: rgba(255, 255, 255, 0.75); /* White with opacity */
+  --card-border: rgba(99, 102, 241, 0.12);
+  --accent-glow: radial-gradient(circle at top, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.05) 50%, transparent 100%);
+  --text-muted: #475569; /* Slate 600 */
+  --border-color: rgba(99, 102, 241, 0.15);
 }
 
 body {
@@ -16,6 +30,7 @@ body {
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
   height: 100%;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Custom Scrollbar */
@@ -39,24 +54,25 @@ body {
 
 /* Glassmorphism Styles */
 .glass-panel {
-  background: rgba(10, 10, 18, 0.5);
+  background: var(--card-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--card-border);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .glass-panel-interactive {
-  background: rgba(15, 23, 42, 0.3);
+  background: var(--card-bg);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--card-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-panel-interactive:hover {
-  background: rgba(20, 20, 35, 0.5);
-  border-color: rgba(99, 102, 241, 0.25);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  background: var(--card-bg);
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.1);
 }
 
 /* Glow Effect */
@@ -67,4 +83,84 @@ body {
 .glow-text-purple {
   text-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
 }
+
+/* Global Light Mode Overrides for Tailwind Zinc/Dark Classes (Explicit Non-Nested Rules) */
+[data-theme="light"] body {
+  background-color: #f1f5f9;
+  background-image: radial-gradient(circle at top, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.02) 50%, transparent 100%);
+  color: #0f172a;
+}
+
+[data-theme="light"] .bg-zinc-950,
+[data-theme="light"] .bg-zinc-900,
+[data-theme="light"] .bg-zinc-900\/50,
+[data-theme="light"] .bg-zinc-950\/60,
+[data-theme="light"] .bg-zinc-950\/20,
+[data-theme="light"] .bg-zinc-950\/50,
+[data-theme="light"] .bg-zinc-950\/90 {
+  background-color: #f8fafc !important;
+}
+
+[data-theme="light"] .text-white,
+[data-theme="light"] .text-zinc-100,
+[data-theme="light"] .text-zinc-200,
+[data-theme="light"] .text-zinc-250,
+[data-theme="light"] .text-zinc-300 {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .text-zinc-400,
+[data-theme="light"] .text-zinc-500,
+[data-theme="light"] .text-zinc-600 {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .border-zinc-800,
+[data-theme="light"] .border-zinc-850,
+[data-theme="light"] .border-zinc-900,
+[data-theme="light"] .border-zinc-800\/80,
+[data-theme="light"] .border-zinc-800\/60,
+[data-theme="light"] .border-zinc-800\/50,
+[data-theme="light"] .border-zinc-850\/80 {
+  border-color: #cbd5e1 !important;
+}
+
+[data-theme="light"] .bg-zinc-900\/60 {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+}
+
+[data-theme="light"] .bg-zinc-950\/70 {
+  background-color: rgba(248, 250, 252, 0.8) !important;
+}
+
+[data-theme="light"] .bg-zinc-900\/10 {
+  background-color: rgba(99, 102, 241, 0.04) !important;
+}
+
+[data-theme="light"] .hover\:bg-zinc-900\/30:hover {
+  background-color: rgba(99, 102, 241, 0.08) !important;
+}
+
+[data-theme="light"] .text-zinc-350 {
+  color: #1e293b !important;
+}
+
+[data-theme="light"] .text-zinc-450 {
+  color: #334155 !important;
+}
+
+[data-theme="light"] .glass-panel,
+[data-theme="light"] .glass-panel-interactive {
+  background: rgba(255, 255, 255, 0.75) !important;
+  border-color: rgba(99, 102, 241, 0.12) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
+}
+
+[data-theme="light"] .glass-panel-interactive:hover {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(99, 102, 241, 0.28) !important;
+  box-shadow: 0 8px 30px rgba(99, 102, 241, 0.06) !important;
+}
+
+
 

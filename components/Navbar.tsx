@@ -1,17 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("student_theme") || "auto";
+    let activeTheme: "dark" | "light" = "dark";
+    if (savedTheme === "auto") {
+      activeTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    } else {
+      activeTheme = savedTheme as "dark" | "light";
+    }
+    setTheme(activeTheme);
+    document.documentElement.setAttribute("data-theme", activeTheme);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem("student_theme", nextTheme);
+    document.documentElement.setAttribute("data-theme", nextTheme);
+  };
 
   const navLinks = [
     { label: "Home", href: "/" },
-    { label: "DSA Dashboard", href: "/dsa" },
-    { label: "Love Babbar Tracker", href: "/dsa/player" }
+    { label: "Study Material", href: "/study-material" },
+    { label: "DSA Dashboard", href: "/dsa" }
   ];
 
   const isActive = (path: string) => {
@@ -54,6 +74,14 @@ export default function Navbar() {
                   </Link>
                 );
               })}
+              
+              {/* Theme Toggle Button */}
+              <button
+                onClick={toggleTheme}
+                className="text-xs font-extrabold px-3 py-2 rounded-xl border border-zinc-800 hover:border-zinc-700 bg-zinc-950/40 text-zinc-350 hover:text-zinc-200 transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                {theme === "dark" ? "🌙 Dark Mode" : "☀️ Light Mode"}
+              </button>
             </div>
           </div>
 
@@ -84,7 +112,7 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {isOpen && (
         <div className="md:hidden border-t border-zinc-800/40 bg-zinc-950/90 backdrop-blur-lg animate-fade-in" id="mobile-menu">
-          <div className="space-y-1 px-4 py-3">
+          <div className="space-y-2 px-4 py-3 flex flex-col">
             {navLinks.map((link) => {
               const active = isActive(link.href);
               return (
@@ -102,6 +130,17 @@ export default function Navbar() {
                 </Link>
               );
             })}
+            
+            {/* Mobile Theme Toggle Button */}
+            <button
+              onClick={() => {
+                toggleTheme();
+                setIsOpen(false);
+              }}
+              className="text-left font-semibold text-base rounded-xl px-4 py-2.5 text-zinc-400 hover:bg-zinc-900/60 hover:text-zinc-105 transition flex items-center gap-2 cursor-pointer"
+            >
+              {theme === "dark" ? "🌙 Dark Mode" : "☀️ Light Mode"}
+            </button>
           </div>
         </div>
       )}

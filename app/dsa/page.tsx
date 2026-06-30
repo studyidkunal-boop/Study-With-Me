@@ -1,471 +1,570 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { dsaModules, DSAModule, Lecture } from "@/data/dsaData";
-import Link from "next/link";
+import { videos as babbarVideos } from "@/data/videos";
+import { striverVideos } from "@/data/striverVideos";
 
-export default function DSAPage() {
-  // Client state
-  const [selectedModuleId, setSelectedModuleId] = useState(dsaModules[0]?.id || "");
-  const [activeTab, setActiveTab] = useState<"lectures" | "notes" | "practice">("lectures");
+// Striver Roadmap modules
+const STRIVER_SHEET = "https://dsa-sheet-all.vercel.app/";
+const STRIVER_PLAYLIST = "https://youtube.com/playlist?list=PLgUwDviBIf0oF6QL8m22w1hIDC1vJ_BHz";
+
+interface StriverModule {
+  id: string;
+  title: string;
+  problemsCount: number;
+  youtubeUrl: string;
+  sheetUrl: string;
+}
+
+const striverModules: StriverModule[] = [
+  { id: "str-basics", title: "1. Learn the Basics (Maths, Recursion, STL)", problemsCount: 15, youtubeUrl: STRIVER_PLAYLIST, sheetUrl: STRIVER_SHEET },
+  { id: "str-sort", title: "2. Sorting Techniques", problemsCount: 7, youtubeUrl: STRIVER_PLAYLIST, sheetUrl: STRIVER_SHEET },
+  { id: "str-arrays", title: "3. Arrays", problemsCount: 40, youtubeUrl: STRIVER_PLAYLIST, sheetUrl: STRIVER_SHEET },
+  { id: "str-bs", title: "4. Binary Search", problemsCount: 30, youtubeUrl: STRIVER_PLAYLIST, sheetUrl: STRIVER_SHEET },
+  { id: "str-strings", title: "5. Strings", problemsCount: 15, youtubeUrl: STRIVER_PLAYLIST, sheetUrl: STRIVER_SHEET },
+  { id: "str-ll", title: "6. Linked List", problemsCount: 25, youtubeUrl: STRIVER_PLAYLIST, sheetUrl: STRIVER_SHEET },
+  { id: "str-recursion", title: "7. Recursion & Backtracking", problemsCount: 20, youtubeUrl: STRIVER_PLAYLIST, sheetUrl: STRIVER_SHEET },
+  { id: "str-bit", title: "8. Bit Manipulation", problemsCount: 12, youtubeUrl: STRIVER_PLAYLIST, sheetUrl: STRIVER_SHEET },
+  { id: "str-stack", title: "9. Stack & Queue", problemsCount: 22, youtubeUrl: STRIVER_PLAYLIST, sheetUrl: STRIVER_SHEET },
+  { id: "str-sliding", title: "10. Sliding Window & Two Pointer", problemsCount: 12, youtubeUrl: STRIVER_PLAYLIST, sheetUrl: STRIVER_SHEET },
+  { id: "str-heap", title: "11. Heap & Priority Queue", problemsCount: 15, youtubeUrl: STRIVER_PLAYLIST, sheetUrl: STRIVER_SHEET },
+  { id: "str-greedy", title: "12. Greedy Algorithms", problemsCount: 15, youtubeUrl: STRIVER_PLAYLIST, sheetUrl: STRIVER_SHEET },
+  { id: "str-trees", title: "13. Binary Trees", problemsCount: 35, youtubeUrl: STRIVER_PLAYLIST, sheetUrl: STRIVER_SHEET },
+  { id: "str-bst", title: "14. Binary Search Trees", problemsCount: 15, youtubeUrl: STRIVER_PLAYLIST, sheetUrl: STRIVER_SHEET },
+  { id: "str-graphs", title: "15. Graphs", problemsCount: 30, youtubeUrl: STRIVER_PLAYLIST, sheetUrl: STRIVER_SHEET },
+  { id: "str-dp", title: "16. Dynamic Programming", problemsCount: 50, youtubeUrl: STRIVER_PLAYLIST, sheetUrl: STRIVER_SHEET },
+  { id: "str-trie", title: "17. Trie", problemsCount: 7, youtubeUrl: STRIVER_PLAYLIST, sheetUrl: STRIVER_SHEET }
+];
+
+// Love Babbar Sheet topics
+interface BabbarTopic {
+  id: string;
+  name: string;
+  problemsCount: number;
+}
+
+const babbarTopics: BabbarTopic[] = [
+  { id: "bab-array", name: "Arrays & Sorting", problemsCount: 36 },
+  { id: "bab-matrix", name: "Matrix Grid Space", problemsCount: 10 },
+  { id: "bab-string", name: "Strings Analysis", problemsCount: 43 },
+  { id: "bab-searchsort", name: "Searching & Sorting", problemsCount: 36 },
+  { id: "bab-linkedlist", name: "Linked Lists structures", problemsCount: 36 },
+  { id: "bab-bt", name: "Binary Trees", problemsCount: 35 },
+  { id: "bab-bst", name: "Binary Search Trees", problemsCount: 22 },
+  { id: "bab-greedy", name: "Greedy Allocations", problemsCount: 35 },
+  { id: "bab-backtracking", name: "Backtracking & Recursion", problemsCount: 19 },
+  { id: "bab-stackqueue", name: "Stacks & Queues", problemsCount: 38 },
+  { id: "bab-heap", name: "Heaps / Priority Queues", problemsCount: 18 },
+  { id: "bab-graph", name: "Graph traversals", problemsCount: 44 },
+  { id: "bab-trie", name: "Tries & Trees", problemsCount: 6 },
+  { id: "bab-dp", name: "Dynamic Programming", problemsCount: 60 },
+  { id: "bab-bit", name: "Bit Manipulation", problemsCount: 10 }
+];
+
+// Other creator playlists
+interface CreatorPlaylist {
+  id: string;
+  creator: string;
+  title: string;
+  description: string;
+  url: string;
+  icon: string;
+}
+
+const creatorPlaylists: CreatorPlaylist[] = [
+  { id: "cre-neetcode", creator: "NeetCode", title: "NeetCode 150 Roadmap", description: "Curated 150 LeetCode problems covering all major structures, sorted by clean dependency trees.", url: "https://neetcode.io/practice", icon: "🚀" },
+  { id: "cre-kunal", creator: "Kunal Kushwaha", title: "Java DSA Bootcamp", description: "Complete Git, Java, and DSA tutorials with comprehensive assignments and open source contributions.", url: "https://www.youtube.com/playlist?list=PL9gnSGHSqcnr_DxHsP7AW9ftq0AtAyYqJ", icon: "🎓" },
+  { id: "cre-verma", creator: "Aditya Verma", title: "Dynamic Programming Playlist", description: "The most clear and detailed explanations of Dynamic Programming, recursion trees, and knapsacks.", url: "https://www.youtube.com/playlist?list=PL_z_8CaSLPWekqgliFrnawHwM27CSu57t", icon: "📊" },
+  { id: "cre-gatesmashers", creator: "Gate Smashers", title: "DSA Course Playlists", description: "Excellent visual explanations of data structure fundamentals, graph matrices, and sort algorithms.", url: "https://www.youtube.com/playlist?list=PLxCzCOWd7aiEwaANOg3uBxsjybGPclrF7", icon: "💻" }
+];
+
+export default function DSADashboard() {
+  const [mounted, setMounted] = useState(false);
   
-  // Selected module
-  const selectedModule = useMemo(() => {
-    return dsaModules.find((m) => m.id === selectedModuleId) || dsaModules[0];
-  }, [selectedModuleId]);
+  // Tab states: maps to sheet trackers
+  const [activeTab, setActiveTab] = useState<"striver" | "babbar" | "other">("striver");
+  
+  // Choose Mentor State
+  const [preferredMentor, setPreferredMentor] = useState<"babbar" | "striver">("babbar");
+  
+  // States loaded from local storage
+  const [striverSheetCompleted, setStriverSheetCompleted] = useState<string[]>([]);
+  const [babbarSheetCompleted, setBabbarSheetCompleted] = useState<string[]>([]);
+  const [creatorStatus, setCreatorStatus] = useState<Record<string, "Not Started" | "In Progress" | "Completed">>({});
+  
+  // Lecture completion lists
+  const [babbarCompleted, setBabbarCompleted] = useState<string[]>([]);
+  const [striverCompleted, setStriverCompleted] = useState<string[]>([]);
 
-  // Selected lecture in the current module
-  const [selectedLectureId, setSelectedLectureId] = useState<string>("");
-
-  const currentLecture = useMemo(() => {
-    if (!selectedModule) return null;
-    const lectures = selectedModule.lectures;
-    if (lectures.length === 0) return null;
-    return lectures.find((l) => l.id === selectedLectureId) || lectures[0];
-  }, [selectedModule, selectedLectureId]);
-
-  // If selected module changes, reset the selected lecture to the first lecture of the new module
-  const handleModuleChange = (id: string) => {
-    setSelectedModuleId(id);
-    const newModule = dsaModules.find((m) => m.id === id);
-    if (newModule && newModule.lectures.length > 0) {
-      setSelectedLectureId(newModule.lectures[0].id);
-    } else {
-      setSelectedLectureId("");
-    }
-  };
-
-  // Custom Video Player Url input state (allow user to paste YouTube link)
-  const [customUrl, setCustomUrl] = useState("");
-  const [overrideYoutubeId, setOverrideYoutubeId] = useState<string | null>(null);
-
-  const handleLoadCustomUrl = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customUrl) return;
-
-    // Try to extract youtube video ID
-    // Supports: 
-    // - https://www.youtube.com/watch?v=VIDEO_ID
-    // - https://youtu.be/VIDEO_ID
-    // - plain VIDEO_ID
-    let videoId = customUrl.trim();
+  // Load from local storage
+  useEffect(() => {
+    setMounted(true);
     
-    try {
-      if (videoId.includes("youtube.com/watch")) {
-        const urlParams = new URLSearchParams(new URL(videoId).search);
-        videoId = urlParams.get("v") || videoId;
-      } else if (videoId.includes("youtu.be/")) {
-        videoId = videoId.split("youtu.be/")[1]?.split("?")[0] || videoId;
-      } else if (videoId.includes("youtube.com/embed/")) {
-        videoId = videoId.split("youtube.com/embed/")[1]?.split("?")[0] || videoId;
-      }
-    } catch (e) {
-      // If parsing fails, fall back to literal string
+    // Mentor Selection
+    const savedMentor = localStorage.getItem("preferred_dsa_teacher") as "babbar" | "striver" | null;
+    if (savedMentor) {
+      setPreferredMentor(savedMentor);
+      // Auto reopen selection: sets active tab/roadmap view to match preference
+      setActiveTab(savedMentor === "babbar" ? "babbar" : "striver");
     }
 
-    if (videoId) {
-      setOverrideYoutubeId(videoId);
-      setCustomUrl("");
-    }
+    // Checkoff progressions
+    const savedStriverSheet = localStorage.getItem("dsa_striver_progress");
+    if (savedStriverSheet) setStriverSheetCompleted(JSON.parse(savedStriverSheet));
+
+    const savedBabbarSheet = localStorage.getItem("dsa_babbar_sheet_progress");
+    if (savedBabbarSheet) setBabbarSheetCompleted(JSON.parse(savedBabbarSheet));
+
+    const savedCreators = localStorage.getItem("dsa_creator_playlists");
+    if (savedCreators) setCreatorStatus(JSON.parse(savedCreators));
+
+    // Lecture completions
+    const savedBabbarComp = localStorage.getItem("babbar_completed");
+    if (savedBabbarComp) setBabbarCompleted(JSON.parse(savedBabbarComp));
+
+    const savedStriverComp = localStorage.getItem("striver_completed");
+    if (savedStriverComp) setStriverCompleted(JSON.parse(savedStriverComp));
+    
+    // Set active mode in storage
+    localStorage.setItem("student_active_mode", "DSA");
+  }, []);
+
+  // Handlers
+  const handleSelectMentor = (mentor: "babbar" | "striver") => {
+    setPreferredMentor(mentor);
+    localStorage.setItem("preferred_dsa_teacher", mentor);
+    setActiveTab(mentor === "babbar" ? "babbar" : "striver");
   };
 
-  // Get current active youtube ID (either from custom override or current lecture)
-  const activeYoutubeId = useMemo(() => {
-    if (overrideYoutubeId) return overrideYoutubeId;
-    return currentLecture?.youtubeId || "X2NVOSNBbxU";
-  }, [overrideYoutubeId, currentLecture]);
-
-  // Track completed practice problems
-  const [completedProblems, setCompletedProblems] = useState<Record<string, boolean>>({});
-
-  const toggleProblemCompleted = (problemTitle: string) => {
-    setCompletedProblems((prev) => ({
-      ...prev,
-      [problemTitle]: !prev[problemTitle]
-    }));
+  const handleToggleStriverSheet = (moduleId: string) => {
+    const updated = striverSheetCompleted.includes(moduleId)
+      ? striverSheetCompleted.filter((id) => id !== moduleId)
+      : [...striverSheetCompleted, moduleId];
+    setStriverSheetCompleted(updated);
+    localStorage.setItem("dsa_striver_progress", JSON.stringify(updated));
   };
+
+  const handleToggleBabbarSheet = (topicId: string) => {
+    const updated = babbarSheetCompleted.includes(topicId)
+      ? babbarSheetCompleted.filter((id) => id !== topicId)
+      : [...babbarSheetCompleted, topicId];
+    setBabbarSheetCompleted(updated);
+    localStorage.setItem("dsa_babbar_sheet_progress", JSON.stringify(updated));
+  };
+
+  const handleChangeCreatorStatus = (playlistId: string, status: "Not Started" | "In Progress" | "Completed") => {
+    const updated = { ...creatorStatus, [playlistId]: status };
+    setCreatorStatus(updated);
+    localStorage.setItem("dsa_creator_playlists", JSON.stringify(updated));
+  };
+
+  // Dynamic progress calculations
+  const babbarProgressPercent = useMemo(() => {
+    if (babbarVideos.length === 0) return 0;
+    return Math.round((babbarCompleted.length / babbarVideos.length) * 100);
+  }, [babbarCompleted]);
+
+  const striverProgressPercent = useMemo(() => {
+    if (striverVideos.length === 0) return 0;
+    return Math.round((striverCompleted.length / striverVideos.length) * 100);
+  }, [striverCompleted]);
+
+  const striverSheetPercent = useMemo(() => {
+    if (striverModules.length === 0) return 0;
+    return Math.round((striverSheetCompleted.length / striverModules.length) * 100);
+  }, [striverSheetCompleted]);
+
+  const babbarSheetPercent = useMemo(() => {
+    if (babbarTopics.length === 0) return 0;
+    return Math.round((babbarSheetCompleted.length / babbarTopics.length) * 100);
+  }, [babbarSheetCompleted]);
+
+  if (!mounted) {
+    return (
+      <div className="flex-1 flex flex-col min-h-screen bg-zinc-950">
+        <Navbar />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="animate-pulse flex flex-col items-center gap-3">
+            <div className="w-12 h-12 rounded-full border-t-2 border-indigo-500 border-r-2 animate-spin" />
+            <span className="text-sm font-semibold text-zinc-500">Loading DSA Trackers...</span>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col min-h-screen">
       <Navbar />
 
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6 md:gap-8">
+      <main className="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 flex flex-col gap-10">
         
-        {/* Course Header Banner */}
-        <section className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800/60 pb-6">
+        {/* Header Block */}
+        <section className="border-b border-zinc-900 pb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
-            <div className="flex items-center gap-2 text-xs uppercase font-extrabold text-indigo-400 tracking-wider">
-              <span>Syllabus Category</span>
-              <span>•</span>
-              <span>AKTU 3rd Semester</span>
-            </div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-zinc-100 mt-1 font-sans">
-              Data Structures and Algorithms (DSA)
+            <span className="text-xs uppercase font-extrabold tracking-widest px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shadow-sm self-start">
+              🚀 Coding Practice Dashboard
+            </span>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-zinc-100 mt-2 font-sans">
+              DSA Tracks & Roadmaps
             </h1>
-            <p className="text-xs md:text-sm text-zinc-400 mt-1.5 font-normal max-w-2xl leading-relaxed">
-              Explore key modules designed to teach algorithmic efficiency. Click on modules to view lectures, download revision notes, and solve core interview questions.
+            <p className="text-sm text-zinc-400 max-w-2xl font-normal leading-relaxed">
+              Track problem sheets, explore famous creator checklists, and monitor your algorithm design skills.
             </p>
           </div>
 
+          {/* Quick resume link to preferred player */}
           <Link
-            href="/dsa/player"
-            className="shrink-0 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-indigo-500/35 bg-indigo-950/20 hover:bg-indigo-900/30 text-indigo-300 hover:text-indigo-200 text-xs md:text-sm font-semibold transition"
+            href={preferredMentor === "babbar" ? "/dsa/player" : "/dsa/striver-player"}
+            className="shrink-0 flex items-center gap-2 px-5 py-3 rounded-xl border border-indigo-500/35 bg-indigo-950/20 hover:bg-indigo-900/30 text-indigo-300 hover:text-indigo-200 text-xs md:text-sm font-extrabold transition shadow-lg shadow-indigo-950 cursor-pointer"
           >
-            <span>📚</span> Love Babbar DSA Tracker
+            <span>🎥</span> Resume Preferred Mentor Class
           </Link>
         </section>
 
-        {/* Desktop Split Layout & Mobile Stack Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* MENTOR SELECTOR (Requirement 6) */}
+        <section className="p-6 rounded-2xl glass-panel border border-zinc-800 bg-zinc-950/20 shadow flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 className="text-sm font-extrabold text-zinc-200 uppercase tracking-wider">Choose Your DSA Mentor</h3>
+            <p className="text-xs text-zinc-500 mt-0.5">Select a mentor. This preference will open automatically on next load.</p>
+          </div>
           
-          {/* Sidebar / Modules List (Span 4) */}
-          <aside className="lg:col-span-4 flex flex-col gap-4">
-            <h3 className="text-xs font-extrabold tracking-widest text-zinc-500 uppercase px-1">
-              Modules & Categories
-            </h3>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => handleSelectMentor("babbar")}
+              className={`px-5 py-2.5 rounded-xl text-xs font-extrabold tracking-wide transition-all cursor-pointer ${
+                preferredMentor === "babbar"
+                  ? "bg-indigo-600 text-white shadow shadow-indigo-650/20 scale-[1.02]"
+                  : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              Love Babbar
+            </button>
+            <button
+              onClick={() => handleSelectMentor("striver")}
+              className={`px-5 py-2.5 rounded-xl text-xs font-extrabold tracking-wide transition-all cursor-pointer ${
+                preferredMentor === "striver"
+                  ? "bg-purple-650 text-white shadow shadow-purple-650/20 scale-[1.02]"
+                  : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              Striver
+            </button>
+          </div>
+        </section>
+
+        {/* DSA CARDS GRID (Requirement 11) */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Babbar card */}
+          <div className="p-6 rounded-2xl glass-panel border border-zinc-850 bg-zinc-950/25 flex flex-col justify-between h-[190px] relative overflow-hidden group hover:border-indigo-500/20 transition-all duration-300">
+            <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-indigo-500/5 blur-xl group-hover:bg-indigo-500/10 transition" />
+            <div>
+              <h3 className="text-lg font-extrabold text-zinc-100">Love Babbar DSA</h3>
+              <p className="text-xs text-zinc-400 font-bold mt-1">150+ Lectures</p>
+            </div>
             
-            <div className="flex flex-col gap-2.5">
-              {dsaModules.map((mod) => {
-                const isActive = mod.id === selectedModuleId;
-                return (
-                  <button
-                    key={mod.id}
-                    onClick={() => handleModuleChange(mod.id)}
-                    className={`w-full text-left p-4 rounded-2xl border transition-all flex flex-col gap-2 glass-panel-interactive
-                      ${
-                        isActive
-                          ? "bg-indigo-950/25 border-indigo-500/80 shadow-md shadow-indigo-600/10"
-                          : "border-zinc-800/80"
-                      }`}
-                  >
-                    <div className="flex justify-between items-center w-full">
-                      <span className={`text-sm font-bold transition-colors ${
-                        isActive ? "text-indigo-300" : "text-zinc-300"
-                      }`}>
-                        {mod.title}
-                      </span>
-                      <span className="text-[10px] font-semibold text-zinc-500 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800/50 shrink-0">
-                        {mod.estimatedTime}
-                      </span>
+            <div className="w-full">
+              <div className="flex justify-between items-center text-[10px] font-bold text-zinc-500 uppercase mb-1">
+                <span>Progress {babbarProgressPercent}%</span>
+                <span>{babbarCompleted.length}/{babbarVideos.length} Completed</span>
+              </div>
+              <div className="w-full bg-zinc-900 rounded-full h-2 overflow-hidden border border-zinc-850">
+                <div className="bg-gradient-to-r from-indigo-500 to-indigo-400 h-full rounded-full" style={{ width: `${babbarProgressPercent}%` }} />
+              </div>
+            </div>
+
+            <Link
+              href="/dsa/player"
+              onClick={() => handleSelectMentor("babbar")}
+              className="w-full text-center py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition shadow shadow-indigo-600/10 cursor-pointer"
+            >
+              Open Player
+            </Link>
+          </div>
+
+          {/* Striver card */}
+          <div className="p-6 rounded-2xl glass-panel border border-zinc-850 bg-zinc-950/25 flex flex-col justify-between h-[190px] relative overflow-hidden group hover:border-purple-500/20 transition-all duration-300">
+            <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-purple-500/5 blur-xl group-hover:bg-purple-500/10 transition" />
+            <div>
+              <h3 className="text-lg font-extrabold text-zinc-100">Striver A2Z DSA</h3>
+              <p className="text-xs text-zinc-400 font-bold mt-1">Full Playlist</p>
+            </div>
+            
+            <div className="w-full">
+              <div className="flex justify-between items-center text-[10px] font-bold text-zinc-500 uppercase mb-1">
+                <span>Progress {striverProgressPercent}%</span>
+                <span>{striverCompleted.length}/{striverVideos.length} Completed</span>
+              </div>
+              <div className="w-full bg-zinc-900 rounded-full h-2 overflow-hidden border border-zinc-850">
+                <div className="bg-gradient-to-r from-purple-500 to-purple-400 h-full rounded-full" style={{ width: `${striverProgressPercent}%` }} />
+              </div>
+            </div>
+
+            <Link
+              href="/dsa/striver-player"
+              onClick={() => handleSelectMentor("striver")}
+              className="w-full text-center py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition shadow shadow-purple-650/10 cursor-pointer"
+            >
+              Open Player
+            </Link>
+          </div>
+        </section>
+
+        {/* Tab Selection */}
+        <div className="flex border-b border-zinc-900 gap-6 text-sm font-bold mt-4">
+          <button
+            onClick={() => setActiveTab("striver")}
+            className={`pb-3 capitalize transition-all relative cursor-pointer ${
+              activeTab === "striver"
+                ? "text-indigo-400 border-b-2 border-indigo-500"
+                : "text-zinc-500 hover:text-zinc-350"
+            }`}
+          >
+            Striver A-Z Roadmap
+          </button>
+          <button
+            onClick={() => setActiveTab("babbar")}
+            className={`pb-3 capitalize transition-all relative cursor-pointer ${
+              activeTab === "babbar"
+                ? "text-indigo-400 border-b-2 border-indigo-500"
+                : "text-zinc-500 hover:text-zinc-350"
+            }`}
+          >
+            Love Babbar Sheet Topics
+          </button>
+          <button
+            onClick={() => setActiveTab("other")}
+            className={`pb-3 capitalize transition-all relative cursor-pointer ${
+              activeTab === "other"
+                ? "text-indigo-400 border-b-2 border-indigo-500"
+                : "text-zinc-500 hover:text-zinc-350"
+            }`}
+          >
+            Other Creator Playlists
+          </button>
+        </div>
+
+        {/* TAB CONTENTS */}
+        <div className="min-h-[300px]">
+          
+          {/* TAB 1: Striver A-Z Roadmap */}
+          {activeTab === "striver" && (
+            <div className="flex flex-col gap-6">
+              
+              {/* Striver Header Card */}
+              <div className="p-6 rounded-2xl border border-zinc-800 bg-zinc-950/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow">
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-zinc-200">Striver A-Z DSA Sheet Tracker</h3>
+                  <p className="text-xs text-zinc-400 mt-1 leading-relaxed max-w-2xl font-normal">
+                    Track your topic completion progress through Striver's comprehensive 17-step roadmap.
+                  </p>
+                </div>
+                <div className="w-full md:w-56 flex flex-col gap-1.5 shrink-0">
+                  <div className="flex justify-between items-center text-[10px] font-bold text-zinc-500 uppercase">
+                    <span>Roadmap Progress</span>
+                    <span>{striverSheetPercent}%</span>
+                  </div>
+                  <div className="w-full bg-zinc-950 rounded-full h-2 overflow-hidden border border-zinc-900">
+                    <div className="bg-indigo-500 h-full rounded-full transition-all duration-300" style={{ width: `${striverSheetPercent}%` }} />
+                  </div>
+                  <span className="text-[10px] text-zinc-550 font-bold uppercase mt-1">
+                    {striverSheetCompleted.length} of {striverModules.length} Modules Checked
+                  </span>
+                </div>
+              </div>
+
+              {/* Modules Listing Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {striverModules.map((mod) => {
+                  const isDone = striverSheetCompleted.includes(mod.id);
+                  return (
+                    <div
+                      key={mod.id}
+                      className={`p-5 rounded-2xl border transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4 group
+                        ${isDone 
+                          ? "bg-indigo-950/5 border-indigo-500/20" 
+                          : "border-zinc-850/80 bg-zinc-950/20"}`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <button
+                          onClick={() => handleToggleStriverSheet(mod.id)}
+                          className={`w-5 h-5 rounded-lg border flex items-center justify-center transition shrink-0 cursor-pointer
+                            ${isDone 
+                              ? "bg-indigo-650 border-indigo-500 text-white" 
+                              : "border-zinc-700 bg-zinc-900/60 hover:border-zinc-500"}`}
+                        >
+                          {isDone && (
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                          )}
+                        </button>
+                        
+                        <div className="min-w-0">
+                          <h4 className={`text-xs font-bold truncate ${isDone ? "text-indigo-300 line-through opacity-70" : "text-zinc-200"}`}>
+                            {mod.title}
+                          </h4>
+                          <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block mt-1">
+                            {mod.problemsCount} Problems
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 self-end md:self-center shrink-0">
+                        <a
+                          href={mod.youtubeUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-zinc-200 text-[10px] font-bold transition flex items-center gap-1"
+                        >
+                          <span>🎥</span> Playlist
+                        </a>
+                        <a
+                          href={mod.sheetUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-2.5 py-1.5 rounded-lg border border-indigo-500/20 bg-indigo-950/20 hover:bg-indigo-950/40 text-indigo-300 hover:text-indigo-200 text-[10px] font-bold transition flex items-center gap-1"
+                        >
+                          <span>📄</span> Sheet
+                        </a>
+                      </div>
                     </div>
-                    <p className="text-xs text-zinc-400 leading-relaxed truncate-2-lines font-normal">
-                      {mod.description}
+                  );
+                })}
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 2: Love Babbar Sheet */}
+          {activeTab === "babbar" && (
+            <div className="flex flex-col gap-6">
+              
+              {/* Sheet Header Card */}
+              <div className="p-6 rounded-2xl border border-zinc-800 bg-zinc-950/20 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow">
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-zinc-200">Love Babbar 450 DSA Sheet Tracker</h3>
+                  <p className="text-xs text-zinc-400 mt-1 leading-relaxed max-w-2xl font-normal">
+                    Check off topics as you finish sections in Love Babbar's official 450 sheet checklist.
+                  </p>
+                </div>
+                <div className="w-full md:w-56 flex flex-col gap-1.5 shrink-0">
+                  <div className="flex justify-between items-center text-[10px] font-bold text-zinc-500 uppercase">
+                    <span>Sheet Progress</span>
+                    <span>{babbarSheetPercent}%</span>
+                  </div>
+                  <div className="w-full bg-zinc-950 rounded-full h-2 overflow-hidden border border-zinc-900">
+                    <div className="bg-emerald-500 h-full rounded-full transition-all duration-300" style={{ width: `${babbarSheetPercent}%` }} />
+                  </div>
+                  <span className="text-[10px] text-zinc-550 font-bold uppercase mt-1">
+                    {babbarSheetCompleted.length} of {babbarTopics.length} Topics Checked
+                  </span>
+                </div>
+              </div>
+
+              {/* Topics Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {babbarTopics.map((topic) => {
+                  const isDone = babbarSheetCompleted.includes(topic.id);
+                  return (
+                    <button
+                      key={topic.id}
+                      onClick={() => handleToggleBabbarSheet(topic.id)}
+                      className={`p-4 rounded-xl border text-left flex justify-between items-center gap-3 transition cursor-pointer
+                        ${isDone 
+                          ? "bg-emerald-950/10 border-emerald-500/30 text-emerald-350" 
+                          : "border-zinc-850 bg-zinc-950/10 text-zinc-400 hover:text-zinc-250 hover:border-zinc-750"}`}
+                    >
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold block truncate leading-tight">
+                          {topic.name}
+                        </span>
+                        <span className={`text-[9px] font-bold block mt-1 uppercase ${isDone ? "text-emerald-550" : "text-zinc-550"}`}>
+                          {topic.problemsCount} Questions
+                        </span>
+                      </div>
+                      
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition
+                        ${isDone 
+                          ? "bg-emerald-600 border-emerald-500 text-white" 
+                          : "border-zinc-800 bg-zinc-955"}`}
+                      >
+                        {isDone && (
+                          <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 3: Other Creator Playlists */}
+          {activeTab === "other" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {creatorPlaylists.map((pl) => {
+                const status = creatorStatus[pl.id] || "Not Started";
+                return (
+                  <div
+                    key={pl.id}
+                    className="p-6 rounded-2xl border border-zinc-850/80 bg-zinc-950/20 flex flex-col gap-4 shadow-sm group hover:border-zinc-700/50 transition-all duration-200"
+                  >
+                    <div className="flex justify-between items-start gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl shadow">
+                          {pl.icon}
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-extrabold uppercase text-indigo-400 tracking-wider">
+                            {pl.creator}
+                          </span>
+                          <h4 className="text-sm font-extrabold text-zinc-200 mt-0.5 leading-tight transition">
+                            {pl.title}
+                          </h4>
+                        </div>
+                      </div>
+
+                      <select
+                        value={status}
+                        onChange={(e) => handleChangeCreatorStatus(pl.id, e.target.value as any)}
+                        className={`text-[10px] font-extrabold uppercase tracking-wide px-2.5 py-1.5 rounded-lg border focus:outline-none transition-all cursor-pointer
+                          ${status === "Completed"
+                            ? "bg-emerald-950/20 border-emerald-500/20 text-emerald-400"
+                            : status === "In Progress"
+                              ? "bg-amber-950/20 border-amber-500/20 text-amber-400"
+                              : "bg-zinc-900 border-zinc-800 text-zinc-500"}`}
+                      >
+                        <option value="Not Started" className="bg-zinc-950 text-zinc-400">Not Started</option>
+                        <option value="In Progress" className="bg-zinc-950 text-zinc-400">In Progress</option>
+                        <option value="Completed" className="bg-zinc-950 text-zinc-400">Completed</option>
+                      </select>
+                    </div>
+
+                    <p className="text-xs text-zinc-400 font-normal leading-relaxed flex-grow">
+                      {pl.description}
                     </p>
-                  </button>
+
+                    <a
+                      href={pl.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-full py-2 rounded-xl border border-zinc-800 hover:border-zinc-700 bg-zinc-900 hover:bg-zinc-850 text-zinc-300 font-bold text-xs tracking-wide shadow-sm hover:scale-[1.01] transition-all text-center flex items-center justify-center gap-1.5"
+                    >
+                      <span>🔗 Open Creator Playlist Link</span>
+                    </a>
+                  </div>
                 );
               })}
             </div>
-          </aside>
-
-          {/* Module Main Panel (Span 8) */}
-          <section className="lg:col-span-8 flex flex-col gap-6">
-            
-            {/* Header info for selected module */}
-            <div className="p-6 rounded-2xl glass-panel border border-zinc-800/60 flex flex-col gap-3.5">
-              <div>
-                <h2 className="text-xl font-bold text-zinc-100">
-                  {selectedModule.title}
-                </h2>
-                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-                  {selectedModule.description}
-                </p>
-              </div>
-
-              {/* Key concepts tags */}
-              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-zinc-900/60">
-                <span className="text-[10px] font-extrabold tracking-wider text-zinc-500 uppercase mr-1">
-                  Key Concepts:
-                </span>
-                {selectedModule.concepts.map((concept, idx) => (
-                  <span
-                    key={idx}
-                    className="text-[10px] font-bold text-zinc-300 bg-zinc-900 border border-zinc-850 px-2.5 py-1 rounded"
-                  >
-                    {concept}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* TAB Navigation */}
-            <div className="flex border-b border-zinc-800/80 gap-6 text-sm font-bold">
-              {(["lectures", "notes", "practice"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`pb-3 capitalize transition-all relative ${
-                    activeTab === tab
-                      ? "text-indigo-400 border-b-2 border-indigo-500"
-                      : "text-zinc-500 hover:text-zinc-350"
-                  }`}
-                >
-                  {tab === "practice" ? "Practice Problems" : tab === "notes" ? "Study Materials" : "Lectures & Player"}
-                </button>
-              ))}
-            </div>
-
-            {/* Tab content area */}
-            <div className="min-h-[400px]">
-              
-              {/* Tab 1: Lectures & Video Player */}
-              {activeTab === "lectures" && (
-                <div className="flex flex-col gap-6">
-                  
-                  {/* Dynamic Video Player / Placeholder */}
-                  <div className="glass-panel border border-zinc-800/80 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
-                    
-                    {/* Video Display Area */}
-                    <div className="aspect-video w-full bg-zinc-950 relative flex items-center justify-center border-b border-zinc-900">
-                      {activeYoutubeId ? (
-                        <iframe
-                          className="w-full h-full relative z-10"
-                          src={`https://www.youtube.com/embed/${activeYoutubeId}?autoplay=0&rel=0`}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        />
-                      ) : (
-                        <div className="text-center p-8 flex flex-col items-center">
-                          <span className="text-4xl mb-2">🎥</span>
-                          <p className="text-sm text-zinc-400">Video Player Placeholder</p>
-                          <p className="text-xs text-zinc-500 mt-1">Select a lecture below or paste a custom URL.</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Metadata & Custom URL Input */}
-                    <div className="p-5 flex flex-col gap-4 bg-zinc-950/20">
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <span className="text-[10px] font-bold text-indigo-400 tracking-wide uppercase">
-                            Currently Viewing
-                          </span>
-                          <h4 className="text-base font-bold text-zinc-200 mt-0.5 truncate">
-                            {currentLecture?.title || "No Lecture Selected"}
-                          </h4>
-                          <p className="text-xs text-zinc-400 mt-1">
-                            {currentLecture?.description || "Select a lecture from the list to start watching."}
-                          </p>
-                        </div>
-
-                        {overrideYoutubeId && (
-                          <button
-                            onClick={() => setOverrideYoutubeId(null)}
-                            className="text-xs font-semibold px-2.5 py-1 bg-red-950/20 hover:bg-red-950/40 text-red-400 border border-red-500/20 rounded-md transition self-start"
-                          >
-                            Reset to Default
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Video URL Placeholder Customizer */}
-                      <form onSubmit={handleLoadCustomUrl} className="flex gap-2 border-t border-zinc-900/60 pt-4 items-center">
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-wide shrink-0">
-                          Add Youtube URL:
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="https://www.youtube.com/watch?v=..."
-                          value={customUrl}
-                          onChange={(e) => setCustomUrl(e.target.value)}
-                          className="flex-grow text-xs px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg text-zinc-300 placeholder-zinc-650 focus:outline-none focus:border-indigo-500/50"
-                        />
-                        <button
-                          type="submit"
-                          className="text-xs font-bold px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition"
-                        >
-                          Load
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-
-                  {/* Lectures List */}
-                  <div className="flex flex-col gap-3">
-                    <h3 className="text-xs font-extrabold tracking-widest text-zinc-500 uppercase px-1">
-                      Module Lectures ({selectedModule.lectures.length})
-                    </h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      {selectedModule.lectures.map((lec) => {
-                        const isActive = currentLecture?.id === lec.id;
-                        return (
-                          <div
-                            key={lec.id}
-                            onClick={() => {
-                              setSelectedLectureId(lec.id);
-                              setOverrideYoutubeId(null); // Clear custom url when changing lectures
-                            }}
-                            className={`p-4 rounded-xl border text-left cursor-pointer transition flex items-start gap-3 glass-panel-interactive
-                              ${
-                                isActive
-                                  ? "bg-indigo-950/15 border-indigo-500/80 shadow"
-                                  : "border-zinc-800/80"
-                              }`}
-                          >
-                            <span className="text-lg shrink-0 mt-0.5">▶️</span>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex justify-between items-center w-full">
-                                <span className={`text-xs font-extrabold tracking-wider px-1.5 py-0.5 rounded
-                                  ${isActive ? "bg-indigo-900/60 text-indigo-300" : "bg-zinc-900 text-zinc-400"}`}>
-                                  {lec.duration}
-                                </span>
-                              </div>
-                              <h5 className={`text-sm font-semibold mt-1.5 truncate ${
-                                isActive ? "text-indigo-200" : "text-zinc-300"
-                              }`}>
-                                {lec.title}
-                              </h5>
-                              <p className="text-xs text-zinc-400 mt-1 font-normal line-clamp-1 leading-normal">
-                                {lec.description}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                </div>
-              )}
-
-              {/* Tab 2: Study Materials */}
-              {activeTab === "notes" && (
-                <div className="flex flex-col gap-4">
-                  <h3 className="text-xs font-extrabold tracking-widest text-zinc-500 uppercase px-1">
-                    Study Notes & Resources
-                  </h3>
-
-                  {selectedModule.resources.length === 0 ? (
-                    <div className="p-8 text-center glass-panel border border-zinc-800/60 rounded-xl text-zinc-500 text-sm">
-                      No notes available for this module yet.
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {selectedModule.resources.map((res, idx) => (
-                        <div
-                          key={idx}
-                          className="p-5 rounded-2xl glass-panel border border-zinc-800/60 bg-zinc-950/20 flex items-center justify-between gap-4 group"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl">📝</span>
-                            <div>
-                              <h4 className="text-sm font-bold text-zinc-200 group-hover:text-white transition">
-                                {res.title}
-                              </h4>
-                              <div className="flex gap-2 items-center mt-1">
-                                <span className="text-[10px] font-extrabold uppercase bg-zinc-900 border border-zinc-850 px-1.5 py-0.5 rounded text-zinc-400">
-                                  {res.type}
-                                </span>
-                                {res.size && (
-                                  <span className="text-[10px] text-zinc-500 font-semibold">
-                                    {res.size}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <a
-                            href={res.url}
-                            className="p-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-150 transition self-center shrink-0"
-                            title="Download Notes"
-                          >
-                            📥
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Add Notes Placeholder */}
-                  <div className="mt-4 p-5 rounded-2xl border border-zinc-850 border-dashed bg-zinc-950/10 text-center flex flex-col items-center justify-center gap-2">
-                    <span className="text-2xl">➕</span>
-                    <h4 className="text-sm font-bold text-zinc-300">Have notes to contribute?</h4>
-                    <p className="text-xs text-zinc-500 max-w-sm">
-                      We support collaborative markdown, PDF, or drive link uploads. You can easily insert notes links into the code structure later.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Tab 3: Practice Problems */}
-              {activeTab === "practice" && (
-                <div className="flex flex-col gap-4">
-                  <h3 className="text-xs font-extrabold tracking-widest text-zinc-500 uppercase px-1">
-                    LeetCode & GeeksforGeeks Core Problems
-                  </h3>
-
-                  {selectedModule.practiceProblems.length === 0 ? (
-                    <div className="p-8 text-center glass-panel border border-zinc-800/60 rounded-xl text-zinc-500 text-sm">
-                      No practice problems listed for this module yet.
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-3">
-                      {selectedModule.practiceProblems.map((prob, idx) => {
-                        const isDone = completedProblems[prob.title] || false;
-                        
-                        return (
-                          <div
-                            key={idx}
-                            className={`p-4 rounded-xl border transition-all flex items-center justify-between gap-4 glass-panel-interactive
-                              ${isDone ? "border-emerald-500/20 bg-emerald-950/5" : "border-zinc-800/80"}`}
-                          >
-                            <div className="flex items-center gap-3">
-                              {/* Status Checkbox */}
-                              <button
-                                onClick={() => toggleProblemCompleted(prob.title)}
-                                className={`w-5 h-5 rounded-md flex items-center justify-center border text-xs transition shrink-0
-                                  ${
-                                    isDone
-                                      ? "bg-emerald-600 border-emerald-500 text-white shadow shadow-emerald-600/20"
-                                      : "border-zinc-700 hover:border-zinc-500 bg-zinc-900"
-                                  }`}
-                              >
-                                {isDone && "✓"}
-                              </button>
-
-                              <div>
-                                <h4 className={`text-sm font-bold transition-colors ${
-                                  isDone ? "text-zinc-400 line-through" : "text-zinc-200"
-                                }`}>
-                                  {prob.title}
-                                </h4>
-                                <span className="text-[10px] text-zinc-500 font-semibold">{prob.platform}</span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                              <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded border ${
-                                prob.difficulty === "Easy"
-                                  ? "bg-emerald-950/40 text-emerald-400 border-emerald-500/20"
-                                  : prob.difficulty === "Medium"
-                                  ? "bg-amber-950/40 text-amber-400 border-amber-500/20"
-                                  : "bg-rose-950/40 text-rose-400 border-rose-500/20"
-                              }`}>
-                                {prob.difficulty}
-                              </span>
-
-                              <a
-                                href={prob.url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-xs px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-300 hover:text-zinc-100 font-bold transition flex items-center gap-1.5"
-                              >
-                                Solve 🔗
-                              </a>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-
-            </div>
-          </section>
+          )}
 
         </div>
 

@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
-import { videos } from "@/data/videos";
+import { striverVideos as videos } from "@/data/striverVideos";
 
 interface Bookmark {
   id: string;
@@ -14,7 +14,7 @@ interface Bookmark {
   url: string;
 }
 
-function LoveBabbarPlayerContent() {
+function StriverPlayerContent() {
   const searchParams = useSearchParams();
   const videoParam = searchParams.get("video");
   const router = useRouter();
@@ -24,7 +24,7 @@ function LoveBabbarPlayerContent() {
       .filter((v) => v.title && v.id) // remove null title
       .sort((a, b) => {
         const getNo = (title: string) => {
-          if (title.includes("Complete Series")) return 0;
+          if (title.includes("Complete Series") || title.includes("Introduction")) return 0;
           const m = title.match(/Lecture\s*(\d+)/i);
           return m ? Number(m[1]) : 9999;
         };
@@ -35,7 +35,7 @@ function LoveBabbarPlayerContent() {
   const [current, setCurrent] = useState<typeof orderedVideos[0] | null>(null);
   const [completedVideos, setCompletedVideos] = useState<string[]>([]);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]); // Global bookmarks
-  const [babbarBookmarks, setBabbarBookmarks] = useState<string[]>([]); // Babbar bookmarks list of IDs
+  const [striverBookmarks, setStriverBookmarks] = useState<string[]>([]); // Striver bookmarks list of IDs
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState("");
@@ -48,16 +48,16 @@ function LoveBabbarPlayerContent() {
   useEffect(() => {
     setMounted(true);
     
-    const savedCompleted = localStorage.getItem("babbar_completed");
+    const savedCompleted = localStorage.getItem("striver_completed");
     if (savedCompleted) setCompletedVideos(JSON.parse(savedCompleted));
 
     const savedBookmarks = localStorage.getItem("student_bookmarks");
     if (savedBookmarks) setBookmarks(JSON.parse(savedBookmarks));
 
-    const savedBabbarBms = localStorage.getItem("babbar_bookmarks");
-    if (savedBabbarBms) setBabbarBookmarks(JSON.parse(savedBabbarBms));
+    const savedStriverBms = localStorage.getItem("striver_bookmarks");
+    if (savedStriverBms) setStriverBookmarks(JSON.parse(savedStriverBms));
 
-    const savedNotes = localStorage.getItem("babbar_notes");
+    const savedNotes = localStorage.getItem("striver_notes");
     if (savedNotes) setNotes(JSON.parse(savedNotes));
 
     // Store active learning mode
@@ -84,8 +84,8 @@ function LoveBabbarPlayerContent() {
       if (mounted) {
         const lastOpened = {
           title: current.title,
-          subtitle: "Love Babbar Java DSA",
-          url: `/dsa/player?video=${current.id}`,
+          subtitle: "Striver A2Z DSA",
+          url: `/dsa/striver-player?video=${current.id}`,
           activeMode: "DSA"
         };
         localStorage.setItem("last_opened_lecture", JSON.stringify(lastOpened));
@@ -98,7 +98,7 @@ function LoveBabbarPlayerContent() {
     setCurrentNote(val);
     const updatedNotes = { ...notes, [current.id]: val };
     setNotes(updatedNotes);
-    localStorage.setItem("babbar_notes", JSON.stringify(updatedNotes));
+    localStorage.setItem("striver_notes", JSON.stringify(updatedNotes));
     
     // Show a temporary "Saved" badge
     setIsSavedIndicator(true);
@@ -112,12 +112,12 @@ function LoveBabbarPlayerContent() {
       ? completedVideos.filter((vId) => vId !== id)
       : [...completedVideos, id];
     setCompletedVideos(updated);
-    localStorage.setItem("babbar_completed", JSON.stringify(updated));
+    localStorage.setItem("striver_completed", JSON.stringify(updated));
   };
 
   // Check if current video is bookmarked
   const isVideoBookmarked = (id: string) => {
-    return babbarBookmarks.includes(id);
+    return striverBookmarks.includes(id);
   };
 
   const toggleBookmarked = (id: string, e: React.MouseEvent) => {
@@ -125,29 +125,29 @@ function LoveBabbarPlayerContent() {
     const targetVideo = orderedVideos.find((v) => v.id === id);
     if (!targetVideo) return;
 
-    const bookmarkId = `babbar-${id}`;
-    let updatedBabbarBms: string[] = [];
+    const bookmarkId = `striver-${id}`;
+    let updatedStriverBms: string[] = [];
     let updatedGlobalBookmarks: Bookmark[] = [];
     
     if (isVideoBookmarked(id)) {
-      updatedBabbarBms = babbarBookmarks.filter((vId) => vId !== id);
+      updatedStriverBms = striverBookmarks.filter((vId) => vId !== id);
       updatedGlobalBookmarks = bookmarks.filter((b) => b.id !== bookmarkId);
     } else {
-      updatedBabbarBms = [...babbarBookmarks, id];
+      updatedStriverBms = [...striverBookmarks, id];
       updatedGlobalBookmarks = [
         ...bookmarks,
         {
           id: bookmarkId,
           type: "lecture",
           title: targetVideo.title || `Lecture ${id}`,
-          subtitle: "Love Babbar Java DSA",
-          url: `/dsa/player?video=${id}`
+          subtitle: "Striver A2Z DSA",
+          url: `/dsa/striver-player?video=${id}`
         }
       ];
     }
     
-    setBabbarBookmarks(updatedBabbarBms);
-    localStorage.setItem("babbar_bookmarks", JSON.stringify(updatedBabbarBms));
+    setStriverBookmarks(updatedStriverBms);
+    localStorage.setItem("striver_bookmarks", JSON.stringify(updatedStriverBms));
     setBookmarks(updatedGlobalBookmarks);
     localStorage.setItem("student_bookmarks", JSON.stringify(updatedGlobalBookmarks));
   };
@@ -168,14 +168,14 @@ function LoveBabbarPlayerContent() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "Love_Babbar_DSA_Notes.txt";
+    link.download = "Striver_DSA_Notes.txt";
     link.click();
     URL.revokeObjectURL(url);
   };
 
   const handleSwitchMentor = () => {
-    localStorage.setItem("preferred_dsa_teacher", "striver");
-    router.push("/dsa/striver-player");
+    localStorage.setItem("preferred_dsa_teacher", "babbar");
+    router.push("/dsa/player");
   };
 
   // Filter video list
@@ -195,7 +195,7 @@ function LoveBabbarPlayerContent() {
       }
       return matchesSearch;
     });
-  }, [orderedVideos, search, filter, completedVideos, babbarBookmarks]);
+  }, [orderedVideos, search, filter, completedVideos, striverBookmarks]);
 
   const progressPercent = useMemo(() => {
     if (orderedVideos.length === 0) return 0;
@@ -223,7 +223,7 @@ function LoveBabbarPlayerContent() {
           {isSidebarOpen ? "✕ Close" : "☰ Lectures"}
         </button>
         <span className="font-bold text-sm bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent glow-text-indigo">
-          Love Babbar DSA
+          Striver A2Z DSA
         </span>
         <span className="text-xs text-zinc-400 font-semibold bg-zinc-900 px-2.5 py-1 rounded-full border border-zinc-800">
           {completedVideos.length}/{orderedVideos.length} Done
@@ -246,8 +246,8 @@ function LoveBabbarPlayerContent() {
         `}
       >
         <div className="p-5 border-b border-zinc-800/50 bg-zinc-950/20">
-          <h1 className="text-xl font-bold bg-gradient-to-r from-indigo-300 via-indigo-100 to-purple-300 bg-clip-text text-transparent flex items-center gap-2">
-            <span>📚</span> Love Babbar DSA
+          <h1 className="text-xl font-bold bg-gradient-to-r from-purple-300 via-indigo-100 to-indigo-300 bg-clip-text text-transparent flex items-center gap-2">
+            <span>📚</span> Striver A2Z DSA
           </h1>
           
           {/* Progress Section */}
@@ -258,7 +258,7 @@ function LoveBabbarPlayerContent() {
             </div>
             <div className="w-full bg-zinc-900 rounded-full h-2 border border-zinc-800/50 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-500 ease-out"
+                className="bg-gradient-to-r from-purple-500 to-indigo-500 h-full rounded-full transition-all duration-500 ease-out"
                 style={{ width: `${progressPercent}%` }}
               ></div>
             </div>
@@ -274,7 +274,7 @@ function LoveBabbarPlayerContent() {
               placeholder="Search lectures..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-zinc-900/60 border border-zinc-800 rounded-lg text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500/80 transition"
+              className="w-full pl-9 pr-3 py-2 bg-zinc-900/60 border border-zinc-800 rounded-lg text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-purple-500/80 transition"
             />
           </div>
 
@@ -286,7 +286,7 @@ function LoveBabbarPlayerContent() {
                 onClick={() => setFilter(t)}
                 className={`flex-1 py-1.5 rounded-md capitalize transition cursor-pointer ${
                   filter === t
-                    ? "bg-indigo-650 text-white shadow-md shadow-indigo-650/20"
+                    ? "bg-purple-650 text-white shadow-md shadow-purple-650/20"
                     : "text-zinc-400 hover:text-zinc-200"
                 }`}
               >
@@ -320,7 +320,7 @@ function LoveBabbarPlayerContent() {
                   className={`w-full text-left p-4 flex items-start gap-3 cursor-pointer transition-all duration-200 relative group
                   ${
                     isActive
-                      ? "bg-indigo-950/25 border-l-2 border-indigo-500"
+                      ? "bg-purple-950/25 border-l-2 border-purple-500"
                       : "hover:bg-zinc-900/35 border-l-2 border-transparent"
                   }`}
                 >
@@ -330,7 +330,7 @@ function LoveBabbarPlayerContent() {
                     className={`mt-0.5 w-5 h-5 rounded-md flex items-center justify-center border text-xs transition-colors shrink-0 cursor-pointer
                       ${
                         isCompleted
-                          ? "bg-indigo-600 border-indigo-500 text-white shadow shadow-indigo-600/20"
+                          ? "bg-purple-600 border-purple-500 text-white shadow shadow-purple-600/20"
                           : "border-zinc-700 hover:border-zinc-500 bg-zinc-900/60"
                       }`}
                   >
@@ -342,7 +342,7 @@ function LoveBabbarPlayerContent() {
                       <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded
                         ${
                           isActive 
-                            ? "bg-indigo-900/60 text-indigo-300"
+                            ? "bg-purple-900/60 text-purple-300"
                             : "bg-zinc-800/80 text-zinc-400"
                         }`}>
                         {lectureMatch ? `Lec ${lectureMatch[1]}` : "Intro"}
@@ -383,7 +383,7 @@ function LoveBabbarPlayerContent() {
           <section className="p-4 rounded-xl border border-zinc-800 bg-zinc-950/60 backdrop-blur flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div className="flex items-center gap-2">
               <span className="text-xs text-zinc-450 uppercase font-bold tracking-wider">Currently Learning From:</span>
-              <span className="text-xs bg-indigo-650/20 text-indigo-300 border border-indigo-500/25 px-2.5 py-0.5 rounded font-extrabold">Love Babbar</span>
+              <span className="text-xs bg-purple-650/20 text-purple-300 border border-purple-500/25 px-2.5 py-0.5 rounded font-extrabold">Striver</span>
             </div>
             
             <button
@@ -397,7 +397,7 @@ function LoveBabbarPlayerContent() {
           {/* Header Info */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800/50 pb-5">
             <div>
-              <span className="text-xs uppercase font-extrabold text-indigo-400 tracking-wider">
+              <span className="text-xs uppercase font-extrabold text-purple-400 tracking-wider">
                 Now Playing
               </span>
               <h2 className="text-xl md:text-2xl font-bold text-zinc-100 mt-1 font-sans">
@@ -412,7 +412,7 @@ function LoveBabbarPlayerContent() {
                 className={`flex items-center gap-2 text-xs px-4 py-2 rounded-xl border transition-all duration-200 font-bold cursor-pointer
                   ${
                     completedVideos.includes(current.id)
-                      ? "bg-indigo-600/15 border-indigo-500 text-indigo-300 font-bold"
+                      ? "bg-purple-600/15 border-purple-500 text-purple-300 font-bold"
                       : "bg-zinc-900 border-zinc-800 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200"
                   }`}
               >
@@ -471,7 +471,7 @@ function LoveBabbarPlayerContent() {
             </div>
 
             <textarea
-              className="w-full min-h-[160px] bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 text-sm text-zinc-200 placeholder-zinc-650 focus:outline-none focus:border-indigo-500/60 leading-relaxed transition"
+              className="w-full min-h-[160px] bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 text-sm text-zinc-200 placeholder-zinc-650 focus:outline-none focus:border-purple-500/60 leading-relaxed transition"
               placeholder="Jot down notes, code snippets, algorithms, and key insights here..."
               value={currentNote}
               onChange={(e) => handleNoteChange(e.target.value)}
@@ -490,7 +490,7 @@ function LoveBabbarPlayerContent() {
   );
 }
 
-export default function LoveBabbarPlayerPage() {
+export default function StriverPlayerPage() {
   return (
     <div className="flex-1 flex flex-col min-h-screen">
       <Navbar />
@@ -502,7 +502,7 @@ export default function LoveBabbarPlayerPage() {
           </div>
         </div>
       }>
-        <LoveBabbarPlayerContent />
+        <StriverPlayerContent />
       </Suspense>
     </div>
   );
